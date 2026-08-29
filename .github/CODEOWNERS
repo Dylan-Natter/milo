@@ -1,0 +1,22 @@
+# Default owner for everything not matched below.
+*                                   @Dylan-Natter
+
+# Canonical engineering authority — changes here are standards changes and
+# require the reason/evidence/scope/conflict analysis the constitution mandates.
+/.specify/memory/constitution.md    @Dylan-Natter
+/AGENTS.md                          @Dylan-Natter
+/ARCHITECTURE.md                    @Dylan-Natter
+
+# Architecture decisions are durable and effectively append-only.
+/docs/architecture/decisions/       @Dylan-Natter
+
+# Security posture and the gates that enforce it.
+/SECURITY.md                        @Dylan-Natter
+/.github/workflows/                 @Dylan-Natter
+/.github/rulesets/                  @Dylan-Natter
+/scripts/checks/                    @Dylan-Natter
+/Makefile                           @Dylan-Natter
+
+# Agent behavior contracts — a weakened guardrail here is invisible at runtime.
+/.claude/                           @Dylan-Natter
+/.github/copilot-instructions.md    @Dylan-Natter

@@ -1,0 +1,53 @@
+# Canonical label taxonomy.
+#
+# The risk:* labels are load-bearing: .github/workflows/risk-gate.yml reads them
+# to decide how much evidence a PR must carry. Apply with a label-sync action or
+# `gh label create`; see docs/operations/platform-operations.md.
+
+# --- Risk ladder (ARCHITECTURE.md). Exactly one is required on every PR. ---
+- name: "risk:R0"
+  color: "0e8a16"
+  description: "Non-runtime documentation or process change"
+- name: "risk:R1"
+  color: "5ac26a"
+  description: "Isolated low-risk change"
+- name: "risk:R2"
+  color: "fbca04"
+  description: "Contained feature behavior"
+- name: "risk:R3"
+  color: "e99695"
+  description: "Business logic, API, or integration impact"
+- name: "risk:R4"
+  color: "d93f0b"
+  description: "Security, data, schema, or infrastructure boundary — ADR required"
+- name: "risk:R5"
+  color: "b60205"
+  description: "Irreversible or broad production-critical change"
+
+# --- Work type (mirrors .github/ISSUE_TEMPLATE/) ---
+- name: "product-improvement"
+  color: "1d76db"
+  description: "User or business outcome improvement"
+- name: "technical-improvement"
+  color: "c5def5"
+  description: "Engineering quality without direct feature scope"
+- name: "bug"
+  color: "d73a4a"
+  description: "Incorrect behavior"
+- name: "security"
+  color: "b60205"
+  description: "Security-affecting work"
+
+# --- Lifecycle ---
+- name: "spec:draft"
+  color: "ededed"
+  description: "Specification is being written"
+- name: "spec:accepted"
+  color: "0e8a16"
+  description: "Specification is approved and implementable"
+- name: "blocked"
+  color: "000000"
+  description: "Cannot proceed — blocker named in the thread"
+- name: "agent-authored"
+  color: "8250df"
+  description: "Primarily authored by an AI engineering worker"

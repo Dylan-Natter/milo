@@ -1,0 +1,39 @@
+name: Technical Improvement
+description: Improve engineering quality without direct feature scope
+title: "Technical improvement: "
+labels: ["technical-improvement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Engineering problem
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Desired engineering outcome
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+    validations:
+      required: true
+  - type: textarea
+    id: deps
+    attributes:
+      label: Dependencies and risks
+  - type: input
+    id: governing_spec
+    attributes:
+      label: Governing specification / issue
+    validations:
+      required: true

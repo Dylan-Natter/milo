@@ -1,0 +1,32 @@
+name: Security
+description: Track security work with careful disclosure
+title: "Security: "
+labels: ["security"]
+body:
+  - type: markdown
+    attributes:
+      value: "Do not include exploit details or secrets in public issues."
+  - type: textarea
+    id: concern
+    attributes:
+      label: Security concern
+    validations:
+      required: true
+  - type: textarea
+    id: impact
+    attributes:
+      label: Impact and affected scope
+    validations:
+      required: true
+  - type: textarea
+    id: mitigation
+    attributes:
+      label: Proposed mitigation / acceptance criteria
+    validations:
+      required: true
+  - type: input
+    id: governing_spec
+    attributes:
+      label: Governing specification / issue
+    validations:
+      required: true

@@ -1,0 +1,48 @@
+version: 2
+updates:
+  # Pinning actions to SHAs (required by scripts/checks/governance.sh) means
+  # nothing updates itself. Dependabot is what keeps those pins current.
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    labels: ["technical-improvement", "risk:R1"]
+    commit-message:
+      prefix: "chore(actions)"
+
+  # Enabled ahead of the stack decision so dependency updates start flowing the
+  # day ADR-0002 lands. Dependabot ignores ecosystems with no manifest.
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 10
+    labels: ["technical-improvement", "risk:R1"]
+    commit-message:
+      prefix: "chore(deps)"
+    groups:
+      dev-dependencies:
+        dependency-type: development
+      production-patch-minor:
+        dependency-type: production
+        update-types: ["minor", "patch"]
+
+  - package-ecosystem: pip
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 10
+    labels: ["technical-improvement", "risk:R1"]
+    commit-message:
+      prefix: "chore(deps)"
+
+  - package-ecosystem: docker
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+    labels: ["technical-improvement", "risk:R2"]

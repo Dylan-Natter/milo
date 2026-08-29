@@ -1,0 +1,23 @@
+Copyright (c) 2026 Dylan Natter. All rights reserved.
+
+This software and its associated documentation are proprietary and
+confidential. No license, express or implied, is granted to any party to use,
+copy, modify, merge, publish, distribute, sublicense, or sell copies of this
+software except under a separate written agreement with the copyright holder.
+
+Unauthorized copying, distribution, or use of this repository, via any medium,
+is strictly prohibited.
+
+---
+
+NOTE FOR TEMPLATE CONSUMERS
+
+This proprietary notice is the deliberate default because it is reversible:
+a project can always be relicensed under permissive terms later, but content
+published under a permissive license cannot be withdrawn.
+
+If a project bootstrapped from this template is intended to be open source,
+replace the text above in full with the chosen license (for example MIT or
+Apache-2.0) and record the choice as an ADR under
+`docs/architecture/decisions/`. Licensing is a consequential decision and is
+governed by the same ADR discipline as architecture.

@@ -1,0 +1,87 @@
+# ---------------------------------------------------------------------------
+# Milo root ignore rules.
+#
+# The repository is deliberately stack-neutral until an ADR selects a product
+# stack, so this file covers the common ecosystems up front. Prune the sections
+# that do not apply once ADR-0002 is accepted.
+# ---------------------------------------------------------------------------
+
+# Secrets and local environment
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+secrets/
+.secrets/
+
+# Node / TypeScript
+node_modules/
+dist/
+build/
+coverage/
+.next/
+.nuxt/
+out/
+*.tsbuildinfo
+.pnpm-store/
+.yarn/cache/
+.yarn/install-state.gz
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+.venv/
+venv/
+.tox/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+htmlcov/
+.coverage
+.coverage.*
+
+# Go
+vendor/
+*.test
+*.out
+
+# Rust / JVM
+target/
+.gradle/
+*.class
+
+# Infrastructure state (never commit — contains resource metadata and secrets)
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+*.tfvars
+!*.tfvars.example
+
+# Editors and OS noise
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.shared.json
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Build/tooling caches
+.cache/
+.turbo/
+.parcel-cache/
+tmp/
+.tmp/
+
+# Local agent scratch space (never committed)
+.scratch/

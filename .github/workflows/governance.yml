@@ -1,0 +1,105 @@
+# The repository's required status check.
+#
+# This workflow deliberately contains no validation logic of its own: it calls
+# the same scripts `make check` runs locally. CI and a developer's machine
+# therefore cannot drift apart.
+name: Governance
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: governance-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  governance:
+    name: Governance checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Validate governance invariants
+        run: make governance
+
+      - name: Scan for committed secrets
+        run: make secrets
+
+  stack:
+    name: Product stack checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # These are no-ops until ADR-0002 selects a stack, then they become the
+      # real gate with no workflow edit required.
+      - name: Lint
+        run: make lint
+
+      - name: Typecheck
+        run: make typecheck
+
+      - name: Test
+        run: make test
+
+  standards:
+    name: Standards-change guard
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      # The local Claude hook only sees Edit/Write. This is the backstop that
+      # catches a governance change arriving by any other route.
+      #
+      # Scope note: only the AUTHORITY documents require a standards branch.
+      # The constitution's Governance clause governs amendments to itself and
+      # to the agent contract; it does not speak to enforcement configuration.
+      # CODEOWNERS, rulesets and agent settings are protected by required
+      # code-owner review instead — the ruleset sets require_code_owner_review,
+      # so they cannot merge without the owner regardless of branch name.
+      #
+      # Additions are always allowed: a file that does not yet exist on the base
+      # branch cannot be an amendment to anything.
+      - name: Require a standards branch to amend authority documents
+        run: |
+          set -euo pipefail
+          git fetch --no-tags --depth=1 origin "${{ github.base_ref }}"
+          base="origin/${{ github.base_ref }}"
+
+          # M = modified, D = deleted. A (added) is deliberately excluded.
+          amended=$(git diff --name-only --diff-filter=MD "$base"...HEAD -- \
+                      .specify/memory/constitution.md AGENTS.md || true)
+
+          if [ -z "$amended" ]; then
+            echo "No authority document amended."
+            exit 0
+          fi
+
+          echo "Authority documents amended:"
+          printf '%s\n' "$amended" | sed 's/^/  /'
+
+          branch="${{ github.head_ref }}"
+          case "$branch" in
+            standards/*|governance/*)
+              echo "Branch '$branch' is a standards branch — allowed."
+              ;;
+            *)
+              echo "::error::Authority document amended on non-standards branch '$branch'."
+              echo "::error::The constitution requires a standards PR carrying reason, evidence, affected scope, and conflict analysis."
+              echo "::error::Move this change to a standards/* branch."
+              exit 1
+              ;;
+          esac

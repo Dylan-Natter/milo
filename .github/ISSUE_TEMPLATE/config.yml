@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability (private disclosure)
+    url: https://github.com/Dylan-Natter/milo/security/advisories/new
+    about: Report a vulnerability privately via GitHub Security Advisories. Do not open a public issue.
+  - name: Engineering standards change
+    url: https://github.com/Dylan-Natter/milo/blob/main/.specify/memory/constitution.md
+    about: Constitution amendments require a standards PR with reason, evidence, scope, and conflict analysis.

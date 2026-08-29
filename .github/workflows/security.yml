@@ -1,0 +1,76 @@
+name: Security
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  secrets:
+    name: Secret scan (history-aware)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # gitleaks lists the PR's commits to scope its scan on pull_request runs.
+      pull-requests: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # gitleaks scans history, so the full graph is required.
+          fetch-depth: 0
+
+      - name: gitleaks
+        uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  dependencies:
+    name: Dependency review
+    runs-on: ubuntu-latest
+    # Only meaningful on PRs, where there is a base to diff against.
+    if: github.event_name == 'pull_request'
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # Dependency review needs the dependency graph, which on a PRIVATE
+      # repository requires GitHub Advanced Security. Probing first means a repo
+      # without it gets a clear warning instead of a hard failure it cannot fix,
+      # while a repo that does support it still gets the check enforced
+      # strictly. Never soften the action itself with continue-on-error: that
+      # would swallow real vulnerability findings too.
+      - name: Probe dependency graph availability
+        id: probe
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -uo pipefail
+          if gh api "/repos/${GH_REPO}/dependency-graph/compare/${BASE}...${HEAD}" \
+               --silent 2>/dev/null; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+            echo "Dependency graph is available; review will run."
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Dependency review skipped — the dependency graph is not available."
+            echo "::warning::On a private repository this requires GitHub Advanced Security."
+            echo "::warning::Enable it at Settings → Code security and analysis, or make the repository public."
+          fi
+
+      - name: Review dependency changes
+        if: steps.probe.outputs.available == 'true'
+        uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          fail-on-severity: high
+          # Copyleft licenses are a deliberate, ADR-worthy decision — not
+          # something a transitive dependency bump should introduce silently.
+          deny-licenses: AGPL-3.0, GPL-3.0

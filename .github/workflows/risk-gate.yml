@@ -1,0 +1,110 @@
+# Turns the R0–R5 risk ladder in ARCHITECTURE.md from prose into a gate.
+#
+# The PR's `risk:RN` label selects how much evidence the PR description must
+# carry. Section emptiness is decided by scripts/checks/pr_body.py, which is
+# unit-tested by `make governance` — an earlier inline version treated the
+# template's own comment hints as content, so every section read as filled.
+name: Risk Gate
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened, labeled, unlabeled]
+
+permissions:
+  contents: read
+  issues: read
+
+jobs:
+  risk:
+    name: Proportional validation depth
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Enforce evidence proportional to risk
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          jq -r '.pull_request.body // ""' "$GITHUB_EVENT_PATH" > /tmp/pr_body.md
+          labels=$(jq -r '.pull_request.labels[].name' "$GITHUB_EVENT_PATH")
+
+          # ARCHITECTURE.md specifies exactly one risk label. Selecting the
+          # first of several would let a PR labelled both R0 and R5 be graded
+          # R0 depending on label order.
+          matched=$(printf '%s\n' "$labels" | grep -E '^risk:R[0-5]$' || true)
+          count=$(printf '%s' "$matched" | grep -c . || true)
+
+          if [ "$count" -gt 1 ]; then
+            echo "::error::PR carries $count risk labels; exactly one is required."
+            printf '%s\n' "$matched" | sed 's/^/  /'
+            exit 1
+          fi
+
+          if [ "$count" -eq 0 ]; then
+            # Bootstrap case: a repository created from this template has no
+            # labels until `make apply-platform` runs, so the gate would be
+            # unsatisfiable on its very first PR. Distinguish "the repo defines
+            # no risk labels" from "the API call failed" — treating a failed
+            # request as an empty result would let an outage open the gate.
+            if ! api_out=$(gh api "/repos/${GH_REPO}/labels" --paginate --jq '.[].name' 2>&1); then
+              echo "::error::Could not list repository labels, so the risk gate cannot be evaluated."
+              echo "::error::Failing closed rather than assuming the repository is unconfigured."
+              printf '%s\n' "$api_out" | head -5 | sed 's/^/  /'
+              exit 1
+            fi
+            defined=$(printf '%s\n' "$api_out" | grep -cE '^risk:R[0-5]$' || true)
+            if [ "${defined:-0}" -eq 0 ]; then
+              echo "::warning::No risk:* labels are defined in this repository."
+              echo "::warning::Skipping the risk gate for bootstrap. Run 'make apply-platform' to enable it."
+              exit 0
+            fi
+            echo "::error::No risk label found. Apply exactly one of risk:R0 … risk:R5."
+            echo "The ladder is defined in ARCHITECTURE.md."
+            exit 1
+          fi
+
+          level="${matched#risk:R}"
+          echo "Risk level: R${level}"
+
+          fail=0
+          require() {
+            if python3 scripts/checks/pr_body.py --section "$1" < /tmp/pr_body.md; then
+              echo "  ok: '$1' provided"
+            else
+              echo "::error::R${level} requires the '## $1' section to be filled in with real content."
+              fail=1
+            fi
+          }
+
+          # Every PR must show what was validated and what it links to.
+          require "Validation evidence"
+          require "Linked Issue / Spec"
+
+          if [ "$level" -ge 2 ]; then
+            require "Expected outcome"
+          fi
+          if [ "$level" -ge 3 ]; then
+            require "Meaningful risks"
+            require "Rollback / recovery"
+          fi
+          if [ "$level" -ge 4 ]; then
+            require "Architecture impact"
+            require "Security impact"
+            require "Data / migration impact"
+            if ! grep -qiE 'ADR[- ]?[0-9]{4}|docs/architecture/decisions/' /tmp/pr_body.md; then
+              echo "::error::R${level} changes require a linked ADR (see docs/architecture/decisions/README.md)."
+              fail=1
+            fi
+          fi
+          if [ "$level" -ge 5 ]; then
+            echo "::warning::R5 is an irreversible or production-critical change."
+            echo "::warning::Confirm a named approver and a rehearsed rollback before merge."
+          fi
+
+          [ "$fail" -eq 0 ] || exit 1
+          echo "Risk gate passed for R${level}."

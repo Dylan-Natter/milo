@@ -1,0 +1,69 @@
+name: CodeQL
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Weekly re-scan catches newly published rules against unchanged code.
+    - cron: '17 3 * * 1'
+
+permissions:
+  contents: read
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    # Code scanning needs GitHub Advanced Security on a private repository.
+    # Without it the CodeQL bundle download can hang rather than fail fast, so
+    # this cap guarantees the job always reaches a conclusion.
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+    strategy:
+      fail-fast: false
+      matrix:
+        # `actions` scans the workflows themselves. Add the product language
+        # (javascript-typescript / python / go) when ADR-0002 is accepted.
+        language: [actions]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # Probe before doing any expensive work, for the same reason dependency
+      # review does: a repository that cannot run code scanning should get one
+      # clear warning, not a 20-minute hang followed by an error it cannot fix.
+      - name: Probe code scanning availability
+        id: probe
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -uo pipefail
+          out=$(gh api "/repos/${GH_REPO}/code-scanning/alerts?per_page=1" 2>&1) || true
+          if printf '%s' "$out" | grep -qi 'Advanced Security\|not enabled\|must be enabled'; then
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::CodeQL skipped — code scanning is not available on this repository."
+            echo "::warning::A private repository needs GitHub Advanced Security; a public one has it free."
+            echo "::warning::Enable at Settings → Code security and analysis, or make the repository public."
+          else
+            echo "available=true" >> "$GITHUB_OUTPUT"
+            echo "Code scanning is available; CodeQL will run."
+          fi
+
+      - name: Initialize CodeQL
+        if: steps.probe.outputs.available == 'true'
+        uses: github/codeql-action/init@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9
+        with:
+          language: ${{ matrix.language }}
+          queries: security-extended
+
+      - name: Analyze
+        if: steps.probe.outputs.available == 'true'
+        uses: github/codeql-action/analyze@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9
+        with:
+          category: /language:${{ matrix.language }}

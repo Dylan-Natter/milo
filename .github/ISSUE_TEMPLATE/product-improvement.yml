@@ -1,0 +1,45 @@
+name: Product Improvement
+description: Propose a user or business outcome improvement
+title: "Product improvement: "
+labels: ["product-improvement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What user/business problem should improve?
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Desired outcome
+      description: What measurable result should change?
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: What is in and out of scope?
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Objective checks for done.
+    validations:
+      required: true
+  - type: textarea
+    id: deps
+    attributes:
+      label: Dependencies and risks
+      description: Upstream dependencies and key risks.
+  - type: input
+    id: governing_spec
+    attributes:
+      label: Governing specification
+      description: Link spec/plan/task artifacts.
+    validations:
+      required: true
